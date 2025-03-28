@@ -30,7 +30,6 @@ from langchain_text_splitters.markdown import MarkdownHeaderTextSplitter
 
 # Initialize the RAG agent
 rag_agent = RAGAgent(llm, vectorstore, system_template)
-agent_with_search = RAGAgent(llm_with_search, vectorstore, search_system_template)
 
 # Check if user is admin
 def is_admin(user):
@@ -67,13 +66,9 @@ def chat_session(request, session_id=None):
     # Get messages for this session
     messages = ChatMessage.objects.filter(session=session)
     
-    # Check if there's an example question in the URL
-    example_question = request.GET.get('example', '')
-    
     return render(request, 'chatbot_app/chat.html', {
         'session': session,
-        'messages': messages,
-        'example_question': example_question
+        'messages': messages
     })
 
 @login_required
@@ -82,12 +77,6 @@ def chat_api(request, session_id):
     if request.method == 'POST':
         data = json.loads(request.body)
         user_message = data.get('message', '')
-        web_search = data.get('web_search', False)
-
-        if web_search:
-            agent = agent_with_search
-        else:
-            agent = rag_agent
         
         # Save user message
         session = get_object_or_404(ChatSession, id=session_id, user=request.user)
@@ -98,7 +87,7 @@ def chat_api(request, session_id):
         )
         
         # Get response from RAG agent
-        response = agent.process_with_sources(session, user_message)
+        response = rag_agent.process_with_sources(session, user_message)
         
         # Process the response to make chunk_ids clickable
         processed_response = response
@@ -153,14 +142,8 @@ def new_chat_with_first_message(request):
         content=first_message
     )
     
-    web_search = request.GET.get('web_search', False)
-    if web_search:
-        agent = agent_with_search
-    else:
-        agent = rag_agent
-
     # If there's a first message, save it as an assistant message
-    response = agent.process_with_sources(session, first_message)
+    response = rag_agent.process_with_sources(session, first_message)
     
     ChatMessage.objects.create(
         session=session,
@@ -255,11 +238,11 @@ def create_vectorstore(request):
     df = knowledge_reading(filepaths)
     print('Read documents')
     
-    summarizer = DocumentSummarizer(llm=llm)
+    # summarizer = DocumentSummarizer(llm=llm)
     
-    # create db summary
-    df['summary'] = df['content'].apply(lambda x: summarizer.summarize_text(x))
-    df.to_csv('database/full_content.csv', index=True, header=True)
+    # # create db summary
+    # df['summary'] = df['content'].apply(lambda x: summarizer.summarize_text(x))
+    # df.to_csv('database/full_content.csv', index=True, header=True)
     
     # Chunk the data
     chunk_size = 500

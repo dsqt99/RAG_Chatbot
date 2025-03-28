@@ -199,18 +199,6 @@
                         </div>
                     {% endfor %}
                 </div>
-                
-                <div class="mt-auto p-3 border-top border-secondary">
-                    <div class="user-info d-flex align-items-center justify-content-between">
-                        <div class="d-flex align-items-center">
-                            <div class="avatar bg-primary rounded-circle me-2 d-flex align-items-center justify-content-center" style="width: 32px; height: 32px;">
-                                {{ request.user.username|first|upper }}
-                            </div>
-                            <span>{{ request.user.username }}</span>
-                        </div>
-                        <a href="{% url 'logout' %}" class="text-light"><i class="bi bi-box-arrow-right"></i></a>
-                    </div>
-                </div>
             </div>
         </div>
         
@@ -219,8 +207,8 @@
             <div class="chat-container p-4 flex-grow-1">
                 {% for message in messages %}
                     <div class="message mb-4 {% if message.role == 'user' %}text-end{% endif %}">
-                        <div class="message-content p-3 rounded {% if message.role == 'user' %}bg-primary text-white{% else %}bg-white{% endif %}">
-                            {{ message.content|linebreaks }}
+                        <div class="message-content p-3 rounded {% if message.role == 'user' %}bg-primary text-white{% else %}bg-white{% endif %}" data-raw-content="{{ message.content }}">
+                            {{ message.content|linebreaksbr }}
                         </div>
                         <div class="message-meta small text-muted mt-1">
                             {{ message.role|title }} • {{ message.timestamp|date:"M d, Y H:i" }}
@@ -238,10 +226,6 @@
                 <form id="chat-form" class="d-flex">
                     <div class="position-relative w-100 me-2">
                         <input type="text" id="message-input" class="form-control" placeholder="Type your message here..." required style="padding-right: 40px;">
-                        <div class="position-absolute" style="right: 10px; top: 50%; transform: translateY(-50%);">
-                            <input type="hidden" id="webSearchInput" name="web_search" value="false">
-                            <i class="bi bi-globe web-search-icon" style="cursor: pointer; font-size: 1.5rem; color: #6c757d;"></i>
-                        </div>
                     </div>
                     <button type="submit" class="btn btn-primary">
                         <i class="bi bi-send"></i>
@@ -260,20 +244,10 @@
         const input = document.getElementById('message-input');
         const chatContainer = document.querySelector('.chat-container');
         
-        // Web search icon toggle functionality
-        const webSearchIcon = document.querySelector('.web-search-icon');
-        const webSearchInput = document.getElementById('webSearchInput');
-        let webSearchActive = false;
-        
-        webSearchIcon.addEventListener('click', function() {
-            webSearchActive = !webSearchActive;
-            webSearchInput.value = webSearchActive ? "true" : "false";
-            
-            if (webSearchActive) {
-                webSearchIcon.style.color = '#0d6efd'; // Change to blue when active
-            } else {
-                webSearchIcon.style.color = '#6c757d'; // Change back to gray when inactive
-            }
+        // Process existing messages
+        document.querySelectorAll('.message-content[data-raw-content]').forEach(function(element) {
+            const rawContent = element.getAttribute('data-raw-content');
+            element.innerHTML = processMessageContent(rawContent.replace(/\n/g, '<br>'));
         });
         
         // Scroll to bottom of chat
@@ -413,8 +387,7 @@
                     'X-CSRFToken': '{{ csrf_token }}'
                 },
                 body: JSON.stringify({ 
-                    message: message,
-                    web_search: webSearchActive
+                    message: message
                 })
             })
             .then(response => response.json())

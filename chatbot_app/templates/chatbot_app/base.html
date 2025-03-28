@@ -7,6 +7,20 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
     {% block extra_head %}{% endblock %}
     <style>
+        .root {
+            --primary-color: #0C528D;
+            --bs-primary: #0C528D;      
+        }
+        .bg-primary {
+            --bs-bg-opacity: 1;
+            background-color: #0C528D !important;
+        }
+        .btn-primary {
+            --bs-btn-bg: #0C528D;
+            --bs-btn-border-color: #0C528D;
+            --bs-btn-hover-bg: #0C528D;
+            --bs-btn-hover-border-color: #0C528D; 
+        }
         .chat-container {
             height: 70vh;
             overflow-y: auto;
